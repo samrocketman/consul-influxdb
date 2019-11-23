@@ -1,0 +1,53 @@
+version: '2.2'
+
+networks:
+  internal:
+    driver: bridge
+  consul-network:
+    external:
+      name: docker-compose-ha-consul-vault-ui_internal
+
+volumes:
+  influxdb:
+
+services:
+  influxdb:
+    image: 'influxdb'
+    init: true
+    expose:
+      - 8086/tcp
+    networks:
+      - internal
+      - consul-network
+    volumes:
+      - 'influxdb:/var/lib/influxdb'
+      - ${HOME}/git/github/docker-compose-ha-consul-vault-ui/consul:/usr/local/bin/consul
+      - ${HOME}/git/github/docker-compose-ha-consul-vault-ui/jq:/usr/local/bin/jq
+      - ${HOME}/git/github/docker-compose-ha-consul-vault-ui/scripts/consul-agent.sh:/bin/consul-agent.sh
+    dns:
+      - 172.16.238.2
+      - 172.16.238.3
+    environment:
+      INFLUXDB_ADMIN_USER: 'admin'
+      INFLUXDB_ADMIN_PASSWORD: 'influxadmin'
+      INFLUXDB_USER: 'user1'
+      INFLUXDB_USER_PASSWORD: 'rwpass'
+      INFLUXDB_READ_USER: 'user2'
+      INFLUXDB_READ_USER_PASSWORD: 'ropass'
+      INFLUXDB_DB: 'db0'
+    entrypoint: ''
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -ex
+        export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+        type unzip || (
+          until apt-get update; do sleep 3; done
+          until apt-get -y --no-install-recommends install unzip curl ca-certificates procps less vim; do sleep 3; done
+        )
+        IP="$$(awk '/32 host/ && f ~ /172.16.238/ { print f; exit }; {f=$$2}' /proc/net/fib_trie)"
+        consul-agent.sh --consul-host consul.service.consul --advertise "$$IP" --service '{"service": {"name": "influxdb", "tags": [], "port": 8086}}'
+        chown influxdb. /var/lib/influxdb
+        env | awk '/INFLUX|PATH/ { print "export \""$$0"\"" }' > /tmp/environ.sh
+        exec su -s /bin/sh -c "set -ex; . /tmp/environ.sh; exec /entrypoint.sh influxd" - influxdb
