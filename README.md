@@ -10,3 +10,7 @@ docker-compose-ha-consul-vault-ui to `${HOME}/git/github`.
 
 docker-compose-ha-consul-vault-ui must be started before this project and be
 healthy.
+
+# Launching influx CLI
+
+    docker-compose exec -u influxdb influxdb influx
