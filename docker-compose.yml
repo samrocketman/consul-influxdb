@@ -35,6 +35,7 @@ services:
       INFLUXDB_READ_USER: 'user2'
       INFLUXDB_READ_USER_PASSWORD: 'ropass'
       INFLUXDB_DB: 'db0'
+      INFLUXDB_REPORTING_DISABLED: 'true'
     entrypoint: ''
     command:
       - /bin/sh
