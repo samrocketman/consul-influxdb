@@ -12,7 +12,7 @@ volumes:
 
 services:
   influxdb:
-    image: 'influxdb'
+    image: 'influxdb:1.8'
     init: true
     expose:
       - 8086/tcp
